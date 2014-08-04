@@ -92,6 +92,7 @@ public class SendingDialog extends AlertDialog {
         unsubscribe();
 
         statusView.setText(message);
+        cancelButton.setEnabled(false);
         okButton.setEnabled(true);
     }
 
@@ -161,7 +162,7 @@ public class SendingDialog extends AlertDialog {
 
                     @Override
                     public void onError(Throwable throwable) {
-
+                        setError("upload failed");
                     }
 
                     @Override

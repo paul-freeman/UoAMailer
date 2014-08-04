@@ -52,10 +52,10 @@ public class JsonUpload extends HTTPJsonRequest {
     }
 
     private boolean sendUploadRequest(URL server) throws IOException, JSONException {
-        List<String> list = new ArrayList();
-        list.add("test1.txt");
-        list.add("test2.txt");
-        multiPartTransfer = sendOverHTTP(server, "upload", new Argument("files", list));
+        List<String> fileIds = new ArrayList();
+        fileIds.add("test1");
+        fileIds.add("test2");
+        multiPartTransfer = sendOverHTTP(server, "upload", new Argument("files", fileIds));
         multiPartTransfer.addFile("test1", "test1.txt").append("test1 data");
         multiPartTransfer.addFile("test2", "test2.txt").append("test2 data");
 
@@ -78,8 +78,8 @@ public class JsonUpload extends HTTPJsonRequest {
             }
         }
 
-        if (returnValue.has("upload"))
-            return returnValue.getBoolean("upload");
+        if (returnValue.has("error"))
+            return returnValue.getInt("error") == 0;
 
         return false;
     }

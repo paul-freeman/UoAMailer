@@ -62,8 +62,8 @@ public class JsonLogin extends HTTPJsonRequest {
         if (returnValue == null)
             throw new IOException("bad return value");
 
-        if (returnValue.has("login"))
-            loggedIn = returnValue.getBoolean("login");
+        if (returnValue.has("error"))
+            loggedIn = returnValue.getInt("error") == 0;
         if (returnValue.has("message"))
             message = returnValue.getString("message");
 
