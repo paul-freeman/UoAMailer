@@ -23,7 +23,8 @@
             <EditText
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:id="@+id/upiEditText" android:minWidth="130dp"/>
+                android:id="@+id/upiEditText" android:nextFocusForward="@+id/passwordEditText"
+                android:minWidth="130dp" android:singleLine="true"/>
         </TableRow>
         <TableRow
             android:layout_width="fill_parent"
@@ -36,7 +37,8 @@
             <EditText
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:id="@+id/passwordEditText" android:password="true"/>
+                android:id="@+id/passwordEditText" android:password="true"
+                android:nextFocusForward="@+id/sendButton" android:singleLine="true"/>
         </TableRow>
 
     </TableLayout>
