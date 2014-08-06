@@ -123,9 +123,9 @@ public class HTTPMultiPartTransfer {
         return writer;
     }
 
-    public PrintWriter addFile(String name, String filename) {
+    public OutputStream addFile(String name, String filename) {
         setState(new SendFileState(name, filename));
-        return writer;
+        return outputStream;
     }
 
     public InputStream receive() throws IOException {
