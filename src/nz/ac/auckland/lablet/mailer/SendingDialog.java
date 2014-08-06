@@ -9,6 +9,7 @@ package nz.ac.auckland.lablet.mailer;
 
 import android.app.AlertDialog;
 import android.content.Context;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -22,6 +23,7 @@ import rx.concurrency.Schedulers;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.List;
 
 
 public class SendingDialog extends AlertDialog {
@@ -32,6 +34,9 @@ public class SendingDialog extends AlertDialog {
     private Button okButton;
     private Button cancelButton;
     private URL serverAddress;
+
+    private GroupMembers groupMembers;
+    private List<Uri> attachments;
 
     public SendingDialog(Context context, String upi, String password) {
         super(context);
@@ -150,11 +155,11 @@ public class SendingDialog extends AlertDialog {
     }
 
     private void uploadData() {
-        setMessage("upload");
-        JsonUpload jsonUpload = new JsonUpload();
+        setMessage("Upload");
+        JsonUpload jsonUpload = new JsonUpload(attachments, groupMembers);
         jsonUpload.upload(serverAddress).subscribeOn(Schedulers.threadPoolForIO())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<Boolean>() {
+                .subscribe(new Observer<JsonUpload.Progress>() {
                     @Override
                     public void onCompleted() {
                         setDone();
@@ -162,17 +167,29 @@ public class SendingDialog extends AlertDialog {
 
                     @Override
                     public void onError(Throwable throwable) {
-                        setError("upload failed");
+                        setError("Upload failed");
                     }
 
                     @Override
-                    public void onNext(Boolean done) {
-                        if (done)
-                            setMessage("upload done");
-                        else {
-                            setError("upload failed");
-                        }
+                    public void onNext(JsonUpload.Progress progress) {
+                        setMessage("Upload: " + progress.info);
                     }
                 });
+    }
+
+    public void setGroupMembers(GroupMembers groupMembers) {
+        this.groupMembers = groupMembers;
+    }
+
+    public GroupMembers getGroupMembers() {
+        return groupMembers;
+    }
+
+    public void setAttachments(List<Uri> attachments) {
+        this.attachments = attachments;
+    }
+
+    public List<Uri> getAttachments() {
+        return attachments;
     }
 }

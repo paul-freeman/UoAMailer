@@ -7,7 +7,7 @@
  */
 package nz.ac.auckland.lablet.mailer;
 
-
+import android.net.Uri;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -15,25 +15,37 @@ import rx.Observable;
 import rx.Observer;
 import rx.Subscription;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+
 public class JsonUpload extends HTTPJsonRequest {
     private HTTPMultiPartTransfer multiPartTransfer;
 
-    public Observable<Boolean> upload(final URL server) {
-        return Observable.create(new Observable.OnSubscribeFunc<Boolean>() {
-            @Override
-            public Subscription onSubscribe(final Observer<? super Boolean> receiver) {
-                try {
-                    boolean result = sendUploadRequest(server);
+    final private List<Uri> attachments;
+    final private GroupMembers groupMembers;
 
-                    receiver.onNext(result);
+    public JsonUpload(List<Uri> attachments, GroupMembers groupMembers) {
+        this.attachments = attachments;
+        this.groupMembers = groupMembers;
+    }
+
+    public class Progress {
+        final public String info;
+
+        public Progress(String info) {
+            this.info = info;
+        }
+    }
+
+    public Observable<Progress> upload(final URL server) {
+        return Observable.create(new Observable.OnSubscribeFunc<Progress>() {
+            @Override
+            public Subscription onSubscribe(final Observer<? super Progress> receiver) {
+                try {
+                    sendUploadRequest(receiver, server);
                 } catch (Exception e) {
                     receiver.onError(e);
                 }
@@ -51,14 +63,59 @@ public class JsonUpload extends HTTPJsonRequest {
         });
     }
 
-    private boolean sendUploadRequest(URL server) throws IOException, JSONException {
-        List<String> fileIds = new ArrayList();
-        fileIds.add("test1");
-        fileIds.add("test2");
-        multiPartTransfer = sendOverHTTP(server, "upload", new Argument("files", fileIds));
-        multiPartTransfer.addFile("test1", "test1.txt").append("test1 data");
-        multiPartTransfer.addFile("test2", "test2.txt").append("test2 data");
+    private void sendUploadRequest(final Observer<? super Progress> receiver, URL server) throws IOException,
+            JSONException {
+        receiver.onNext(new Progress("started"));
 
+        // group members
+        List<String> members = new ArrayList<>();
+        if (groupMembers != null) {
+            for (int i = 0; i < groupMembers.size(); i++) {
+                String member = groupMembers.get(i).trim();
+                if (member.equals(""))
+                    continue;
+                members.add(member);
+            }
+        }
+
+        // attachments
+        List<String> fileIds = new ArrayList<>();
+        if (attachments != null) {
+            for (int i = 0; i < attachments.size(); i++)
+                fileIds.add("" + i);
+        }
+
+        // start request
+        multiPartTransfer = sendOverHTTP(server, "upload", new Argument("files", fileIds));
+
+        // upload attachments
+        if (attachments != null) {
+            for (int i = 0; i < attachments.size(); i++) {
+                final File file = new File(attachments.get(i).getPath());
+                receiver.onNext(new Progress(file.getName()));
+
+                OutputStream outputStream = multiPartTransfer.addFile(fileIds.get(i), file.getName());
+                InputStream attachmentStream = new FileInputStream(file);
+                StreamHelper.copy(attachmentStream, outputStream, new StreamHelper.IProgressListener() {
+                    @Override
+                    public int getReportingStep() {
+                        return 10 * 1024;
+                    }
+
+                    @Override
+                    public void onNewProgress(int totalProgress) {
+                        final int KBYTE = 1024;
+                        String update = file.getName();
+                        update += " " + totalProgress / KBYTE + "/" + file.length() / KBYTE + " kBytes";
+                        receiver.onNext(new Progress(update));
+                    }
+                });
+            }
+        }
+
+        receiver.onNext(new Progress("finished"));
+
+        // receive response
         InputStream inputStream = multiPartTransfer.receive();
 
         ByteArrayOutputStream receivedData = new ByteArrayOutputStream();
@@ -78,9 +135,10 @@ public class JsonUpload extends HTTPJsonRequest {
             }
         }
 
-        if (returnValue.has("error"))
-            return returnValue.getInt("error") == 0;
-
-        return false;
+        if (returnValue.has("error")) {
+            int error = returnValue.getInt("error");
+            if (error != 0)
+                throw new IOException("error: " + error);
+        }
     }
 }

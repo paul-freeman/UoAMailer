@@ -8,12 +8,16 @@
 package nz.ac.auckland.lablet.mailer;
 
 import android.app.Activity;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
 import java.net.*;
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class Mailer extends Activity {
@@ -57,7 +61,18 @@ public class Mailer extends Activity {
     }
 
     private void showSendingDialog(String upi, String password) {
+        Intent intent = getIntent();
+        Uri attachment = (Uri)intent.getExtras().get(Intent.EXTRA_STREAM);
+        List<Uri> attachments = null;
+        if (attachment != null) {
+            attachments = new ArrayList<>();
+            attachments.add(attachment);
+        } else
+            attachments = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM);
+
         SendingDialog sendingDialog = new SendingDialog(this, upi, password);
+        sendingDialog.setAttachments(attachments);
+        sendingDialog.setGroupMembers(groupMembers);
         sendingDialog.show();
     }
 
