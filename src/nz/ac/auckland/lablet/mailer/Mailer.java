@@ -17,6 +17,8 @@ import java.net.*;
 
 
 public class Mailer extends Activity {
+    private GroupMembers groupMembers = new GroupMembers();
+
     /**
      * Called when the activity is first created.
      */
@@ -25,10 +27,14 @@ public class Mailer extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
 
-        Button sendButton = (Button)findViewById(R.id.sendButton);
+        final Button sendButton = (Button)findViewById(R.id.sendButton);
 
         final EditText upiEditText = (EditText)findViewById(R.id.upiEditText);
         final EditText passwordEditText = (EditText)findViewById(R.id.passwordEditText);
+        final GroupMemberView groupMemberView = (GroupMemberView)findViewById(R.id.groupMemberView);
+        final Button addButton = (Button)findViewById(R.id.addButton);
+
+        groupMemberView.setGroupMembers(groupMembers);
 
         sendButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -37,6 +43,13 @@ public class Mailer extends Activity {
                 String password = passwordEditText.getText().toString();
 
                 showSendingDialog(upi, password);
+            }
+        });
+
+        addButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                groupMembers.addMember("");
             }
         });
 

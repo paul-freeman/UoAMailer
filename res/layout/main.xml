@@ -7,7 +7,8 @@
     <TextView
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:text="Hello World, Mailer"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="Please Login:"
         />
     <TableLayout
         android:layout_width="match_parent"
@@ -42,6 +43,21 @@
         </TableRow>
 
     </TableLayout>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Other Group Members:"
+        android:id="@+id/textView2"/>
+    <view android:layout_width="fill_parent"
+          android:layout_height="wrap_content"
+          class="nz.ac.auckland.lablet.mailer.GroupMemberView" android:id="@+id/groupMemberView"
+          android:layout_gravity="center_horizontal"/>
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Add Group Member"
+        android:id="@+id/addButton"/>
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
