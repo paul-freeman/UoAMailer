@@ -35,7 +35,7 @@ public class SendingDialog extends AlertDialog {
     private Button cancelButton;
     private URL serverAddress;
 
-    private GroupMembers groupMembers;
+    private List<String> groupMembers;
     private List<Uri> attachments;
 
     public SendingDialog(Context context, String upi, String password) {
@@ -178,11 +178,10 @@ public class SendingDialog extends AlertDialog {
     }
 
     public void setGroupMembers(GroupMembers groupMembers) {
-        this.groupMembers = groupMembers;
-    }
-
-    public GroupMembers getGroupMembers() {
-        return groupMembers;
+        this.groupMembers.clear();
+        this.groupMembers.add(upi);
+        for (int i = 0; i < groupMembers.size(); i++)
+            this.groupMembers.add(groupMembers.get(i));
     }
 
     public void setAttachments(List<Uri> attachments) {

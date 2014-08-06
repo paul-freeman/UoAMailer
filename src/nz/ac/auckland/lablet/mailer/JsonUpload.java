@@ -25,9 +25,9 @@ public class JsonUpload extends HTTPJsonRequest {
     private HTTPMultiPartTransfer multiPartTransfer;
 
     final private List<Uri> attachments;
-    final private GroupMembers groupMembers;
+    final private List<String> groupMembers;
 
-    public JsonUpload(List<Uri> attachments, GroupMembers groupMembers) {
+    public JsonUpload(List<Uri> attachments, List<String> groupMembers) {
         this.attachments = attachments;
         this.groupMembers = groupMembers;
     }
@@ -67,17 +67,6 @@ public class JsonUpload extends HTTPJsonRequest {
             JSONException {
         receiver.onNext(new Progress("started"));
 
-        // group members
-        List<String> members = new ArrayList<>();
-        if (groupMembers != null) {
-            for (int i = 0; i < groupMembers.size(); i++) {
-                String member = groupMembers.get(i).trim();
-                if (member.equals(""))
-                    continue;
-                members.add(member);
-            }
-        }
-
         // attachments
         List<String> fileIds = new ArrayList<>();
         if (attachments != null) {
@@ -86,7 +75,8 @@ public class JsonUpload extends HTTPJsonRequest {
         }
 
         // start request
-        multiPartTransfer = sendOverHTTP(server, "upload", new Argument("files", fileIds));
+        multiPartTransfer = sendOverHTTP(server, "upload", new Argument("files", fileIds),
+                new Argument("groupMembers", groupMembers));
 
         // upload attachments
         if (attachments != null) {
