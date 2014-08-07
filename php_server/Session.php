@@ -25,6 +25,20 @@ class Session {
 
 		return $_SESSION['user'];
 	}
+
+	public function setRootDownloadDir($dir) {
+		$_SESSION['root_download_dir'] = $dir;
+	}
+	
+	public function getRootDownloadDir() {
+		if (!isset($_SESSION['root_download_dir']))
+			return null;
+		return $_SESSION['root_download_dir'];
+	}
+
+	public function hasFileAccess($file) {
+		return strpos($file, $this->getRootDownloadDir()) === 0;
+	}
 }
 
 ?>
