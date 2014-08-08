@@ -14,6 +14,9 @@ import org.json.JSONObject;
 import rx.Observable;
 import rx.Observer;
 import rx.Subscription;
+import rx.android.concurrency.AndroidSchedulers;
+import rx.concurrency.Schedulers;
+import rx.subscriptions.Subscriptions;
 
 import java.io.*;
 import java.net.URL;
@@ -44,13 +47,9 @@ public class JsonUpload extends HTTPJsonRequest {
         return Observable.create(new Observable.OnSubscribeFunc<Progress>() {
             @Override
             public Subscription onSubscribe(final Observer<? super Progress> receiver) {
-                try {
-                    sendUploadRequest(receiver, server);
-                } catch (Exception e) {
-                    receiver.onError(e);
-                }
-
-                receiver.onCompleted();
+                uploadInner(server).subscribeOn(Schedulers.threadPoolForIO())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(receiver);
 
                 return new Subscription() {
                     @Override
@@ -59,6 +58,23 @@ public class JsonUpload extends HTTPJsonRequest {
                             multiPartTransfer.disconnect();
                     }
                 };
+            }
+        });
+    }
+
+    private Observable<Progress> uploadInner(final URL server) {
+        return Observable.create(new Observable.OnSubscribeFunc<Progress>() {
+            @Override
+            public Subscription onSubscribe(final Observer<? super Progress> receiver) {
+                try {
+                    sendUploadRequest(receiver, server);
+                } catch (Exception e) {
+                    receiver.onError(e);
+                }
+
+                receiver.onCompleted();
+
+                return new Subscriptions().empty();
             }
         });
     }
@@ -75,8 +91,7 @@ public class JsonUpload extends HTTPJsonRequest {
         }
 
         // start request
-        multiPartTransfer = sendOverHTTP(server, "upload", new Argument("files", fileIds),
-                new Argument("groupMembers", groupMembers));
+        multiPartTransfer = new HTTPMultiPartTransfer(server);
 
         // upload attachments
         if (attachments != null) {
@@ -89,7 +104,7 @@ public class JsonUpload extends HTTPJsonRequest {
                 StreamHelper.copy(attachmentStream, outputStream, new StreamHelper.IProgressListener() {
                     @Override
                     public int getReportingStep() {
-                        return 10 * 1024;
+                        return 5 * 1024;
                     }
 
                     @Override
@@ -102,6 +117,9 @@ public class JsonUpload extends HTTPJsonRequest {
                 });
             }
         }
+
+        // do rpc once all files are uploaded
+        doRPC(multiPartTransfer, "upload", new Argument("files", fileIds), new Argument("groupMembers", groupMembers));
 
         receiver.onNext(new Progress("finished"));
 

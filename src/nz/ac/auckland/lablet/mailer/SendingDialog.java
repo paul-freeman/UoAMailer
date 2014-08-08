@@ -23,6 +23,7 @@ import rx.concurrency.Schedulers;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -35,7 +36,7 @@ public class SendingDialog extends AlertDialog {
     private Button cancelButton;
     private URL serverAddress;
 
-    private List<String> groupMembers;
+    private List<String> groupMembers = new ArrayList<>();
     private List<Uri> attachments;
 
     public SendingDialog(Context context, String upi, String password) {
@@ -101,6 +102,13 @@ public class SendingDialog extends AlertDialog {
         okButton.setEnabled(true);
     }
 
+    private void setDone() {
+        unsubscribe();
+
+        okButton.setEnabled(true);
+        cancelButton.setEnabled(false);
+    }
+
     private void setProgress(String message) {
         statusView.setText(message);
     }
@@ -149,32 +157,25 @@ public class SendingDialog extends AlertDialog {
                 });
     }
 
-    private void setDone() {
-        okButton.setEnabled(true);
-        cancelButton.setEnabled(false);
-    }
-
     private void uploadData() {
-        setMessage("Upload");
+        setProgress("Upload");
         JsonUpload jsonUpload = new JsonUpload(attachments, groupMembers);
-        jsonUpload.upload(serverAddress).subscribeOn(Schedulers.threadPoolForIO())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<JsonUpload.Progress>() {
-                    @Override
-                    public void onCompleted() {
-                        setDone();
-                    }
+        currentSubscription = jsonUpload.upload(serverAddress).subscribe(new Observer<JsonUpload.Progress>() {
+                @Override
+                public void onCompleted() {
+                    setDone();
+                }
 
-                    @Override
-                    public void onError(Throwable throwable) {
-                        setError("Upload failed");
-                    }
+                @Override
+                public void onError(Throwable throwable) {
+                    setError("Upload failed");
+                }
 
-                    @Override
-                    public void onNext(JsonUpload.Progress progress) {
-                        setMessage("Upload: " + progress.info);
-                    }
-                });
+                @Override
+                public void onNext(JsonUpload.Progress progress) {
+                    setProgress("Upload: " + progress.info);
+                }
+            });
     }
 
     public void setGroupMembers(GroupMembers groupMembers) {

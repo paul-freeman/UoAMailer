@@ -49,7 +49,8 @@ public class JsonLogin extends HTTPJsonRequest {
     }
 
     private boolean sendLoginRequest(URL server, String username, String password) throws IOException, JSONException {
-        multiPartTransfer = sendOverHTTP(server, "login", new Argument("upi", username),
+        multiPartTransfer = new HTTPMultiPartTransfer(server);
+        doRPC(multiPartTransfer, "login", new Argument("upi", username),
                 new Argument("password", password));
         InputStream inputStream = multiPartTransfer.receive();
 

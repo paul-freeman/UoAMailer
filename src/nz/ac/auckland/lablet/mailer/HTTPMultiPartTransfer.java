@@ -20,6 +20,7 @@ public class HTTPMultiPartTransfer {
     private OutputStream outputStream = null;
     private PrintWriter writer = null;
     private IState currentState = null;
+    private InputStream inputStream =null;
 
     public HTTPMultiPartTransfer(URL url) throws IOException {
         connection = (HttpURLConnection)url.openConnection();
@@ -140,11 +141,28 @@ public class HTTPMultiPartTransfer {
         if (status != HttpURLConnection.HTTP_OK)
             throw new IOException("Bad server response: " + status);
 
-        return connection.getInputStream();
+        inputStream = connection.getInputStream();
+        return inputStream;
     }
 
     public void disconnect() {
+        if (outputStream != null) {
+            try {
+                outputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            outputStream = null;
+        }
+        if (inputStream != null) {
+            try {
+                inputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
         connection.disconnect();
+        outputStream = null;
     }
 
     @Override

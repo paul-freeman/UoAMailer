@@ -87,14 +87,11 @@ public class JsonRequest {
 
 
 class HTTPJsonRequest extends JsonRequest {
-    protected URL server;
 
-    protected HTTPMultiPartTransfer sendOverHTTP(URL server, String method, Argument ... argumentList)
+    protected void doRPC(HTTPMultiPartTransfer multiPartTransfer, String method, Argument ... argumentList)
             throws IOException {
-        HTTPMultiPartTransfer multiPartTransfer = new HTTPMultiPartTransfer(server);
 
         setNewJsonId();
         multiPartTransfer.addSmallData("json", createJSONRPC(getJsonId(), method, argumentList));
-        return multiPartTransfer;
     }
 }
