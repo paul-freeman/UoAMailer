@@ -12,25 +12,35 @@ class UploadHandler extends JSONHandler {
 		if (!isset($params['files']))
 			return false;
 
-		if (!$this->upload($params['files'], $jsonRPCId))
+		$groupmembers = null;
+		if (isset($params['groupMembers']))
+			$groupmembers = $params['groupMembers'];
+
+		if (!$this->upload($params['files'], $groupmembers, $jsonRPCId))
 			return $this->makeJSONRPCReturn($jsonRPCId, array('error' => -1, 'message' => "failed to upload data"));
 			
 		return $this->makeJSONRPCReturn($jsonRPCId, array('error' => 0, 'files' => $_FILES));
 	}
 
-	private function upload($files, $jsonRPCId) {
+	private function upload($files, $groupmembers, $jsonRPCId) {
 		$userName = Session::get()->getUser();
 		if ($userName == "")
 			return false;
-		if (!file_exists($userName))
-			mkdir($userName);
 		$now = date('Y-m-d_H-i-s');
-		$dir = $userName."/".$now;
+		$dir = "uploads/".$userName."/".$now;
 		if (!file_exists($dir))
-			mkdir($dir);
+			mkdir($dir, 0777, true);
 
 		foreach ($files as $file) {
-			move_uploaded_file($_FILES[$file]["tmp_name"], $dir."/".$file);
+			move_uploaded_file($_FILES[$file]["tmp_name"], $dir."/".$_FILES[$file]["name"]);
+		}
+
+		if ($groupmembers !== null) {
+			$groupmembersFile = $dir."/groupMembers";
+			$fileContent = "";
+			foreach ($groupmembers as $member)
+				$fileContent = $fileContent.$member."\n";
+			file_put_contents($groupmembersFile, $fileContent); 
 		}
 
 		return true;

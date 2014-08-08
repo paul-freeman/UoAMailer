@@ -66,13 +66,22 @@ function isLoggedIn() {
 	return true;
 }
 
+if (isset($_GET['dir']))
+	$_SESSION['request_download_dir'] = $_GET['dir'];
+
 
 // main
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['loginButton'])) {
         login();
-        //Session::get()->setRootDownloadDir(Session::get()->getUser());
-        Session::get()->setRootDownloadDir("uploads");
+        if (isset($_SESSION['request_download_dir'])) {
+			Session::get()->setRootDownloadDir($_SESSION['request_download_dir']);
+		} else
+			Session::get()->setRootDownloadDir("uploads/".Session::get()->getUser());
+		if (!Session::get()->hasUploadDirAccess(Session::get()->getRootDownloadDir())) {
+			session_destroy();
+			die("Sorry you have no access rights for this directory: ".Session::get()->getRootDownloadDir());
+		}
 		header('Location: explorer.php');
 		exit(); 
     } else if (isset($_POST['logoutButton'])) {

@@ -62,6 +62,11 @@ if (Session::get()->getUser() === null) {
 }
 
 $rootDir = Session::get()->getRootDownloadDir();
+if (isset($_GET['dir']) && $_GET['dir'] != "") {
+	$requestedDir = $_GET['dir'];
+	if (strlen($requestedDir) < $rootDir || substr($requestedDir, 0, strlen($rootDir)) != $rootDir)
+		$_GET['dir'] = $rootDir;
+}
 if ($rootDir === null) {
 	session_destroy();
 	header('Location: download.php');
