@@ -104,7 +104,7 @@ public class JsonUpload extends HTTPJsonRequest {
                 StreamHelper.copy(attachmentStream, outputStream, new StreamHelper.IProgressListener() {
                     @Override
                     public int getReportingStep() {
-                        return 5 * 1024;
+                        return 10 * 1024;
                     }
 
                     @Override
@@ -121,7 +121,7 @@ public class JsonUpload extends HTTPJsonRequest {
         // do rpc once all files are uploaded
         doRPC(multiPartTransfer, "upload", new Argument("files", fileIds), new Argument("groupMembers", groupMembers));
 
-        receiver.onNext(new Progress("finished"));
+        receiver.onNext(new Progress("wait for response"));
 
         // receive response
         InputStream inputStream = multiPartTransfer.receive();
@@ -148,5 +148,6 @@ public class JsonUpload extends HTTPJsonRequest {
             if (error != 0)
                 throw new IOException("error: " + error);
         }
+        receiver.onNext(new Progress("done"));
     }
 }
