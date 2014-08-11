@@ -23,16 +23,23 @@ class UploadHandler extends JSONHandler {
 	}
 
 	private function upload($files, $groupmembers, $jsonRPCId) {
+		$unixUser = get_current_user();
+
 		$userName = Session::get()->getUser();
 		if ($userName == "")
 			return false;
 		$now = date('Y-m-d_H-i-s');
 		$dir = "uploads/".$userName."/".$now;
-		if (!file_exists($dir))
+		if (!file_exists($dir)) {
 			mkdir($dir, 0777, true);
+		}
+		//shell_exec('/usr/bin/setfacl -R -m "default:user:'.$unixUser.':rwx" uploads');
+		shell_exec('/usr/bin/setfacl -R -m "user:'.$unixUser.':rwx" uploads');
 
 		foreach ($files as $file) {
-			move_uploaded_file($_FILES[$file]["tmp_name"], $dir."/".$_FILES[$file]["name"]);
+			$target = $dir."/".$_FILES[$file]["name"];
+			move_uploaded_file($_FILES[$file]["tmp_name"], $target);
+			shell_exec('/usr/bin/setfacl -m "user:'.$unixUser.':rwx" '.$target);
 		}
 
 		if ($groupmembers !== null) {
@@ -40,7 +47,8 @@ class UploadHandler extends JSONHandler {
 			$fileContent = "";
 			foreach ($groupmembers as $member)
 				$fileContent = $fileContent.$member."\n";
-			file_put_contents($groupmembersFile, $fileContent); 
+			file_put_contents($groupmembersFile, $fileContent);
+			shell_exec('/usr/bin/setfacl -m "user:'.$unixUser.':rwx" '.$groupmembersFile);
 		}
 
 		return true;
