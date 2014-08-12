@@ -7,8 +7,10 @@
  */
 package nz.ac.auckland.lablet.mailer;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -28,6 +30,7 @@ import java.util.List;
 
 
 public class SendingDialog extends AlertDialog {
+    final private Activity activity;
     private TextView statusView;
     private Subscription currentSubscription = null;
     private String upi;
@@ -39,9 +42,14 @@ public class SendingDialog extends AlertDialog {
     private List<String> groupMembers = new ArrayList<>();
     private List<Uri> attachments;
 
-    public SendingDialog(Context context, String upi, String password) {
-        super(context);
+    private boolean done = false;
 
+    public SendingDialog(Activity activity, String upi, String password) {
+        super(activity);
+
+        setCancelable(false);
+
+        this.activity = activity;
         this.upi = upi;
         this.password = password;
     }
@@ -77,6 +85,8 @@ public class SendingDialog extends AlertDialog {
             @Override
             public void onClick(View view) {
                 dismiss();
+                if (done)
+                    activity.finish();
             }
         });
 
@@ -86,6 +96,13 @@ public class SendingDialog extends AlertDialog {
         } catch (MalformedURLException e) {
             setError("Can't connect to server.");
         }
+
+        setOnCancelListener(new OnCancelListener() {
+            @Override
+            public void onCancel(DialogInterface dialogInterface) {
+                unsubscribe();
+            }
+        });
     }
 
     private void unsubscribe() {
@@ -104,6 +121,8 @@ public class SendingDialog extends AlertDialog {
 
     private void setDone() {
         unsubscribe();
+
+        done = true;
 
         okButton.setEnabled(true);
         cancelButton.setEnabled(false);
@@ -159,7 +178,7 @@ public class SendingDialog extends AlertDialog {
 
     private void uploadData() {
         setProgress("Upload");
-        JsonUpload jsonUpload = new JsonUpload(attachments, groupMembers);
+        JsonUpload jsonUpload = new JsonUpload(activity, attachments, groupMembers);
         currentSubscription = jsonUpload.upload(serverAddress).subscribe(new Observer<JsonUpload.Progress>() {
                 @Override
                 public void onCompleted() {

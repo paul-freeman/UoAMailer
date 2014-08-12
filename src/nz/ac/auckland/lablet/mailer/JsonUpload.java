@@ -7,7 +7,9 @@
  */
 package nz.ac.auckland.lablet.mailer;
 
+import android.app.Activity;
 import android.net.Uri;
+import android.os.ParcelFileDescriptor;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -27,10 +29,12 @@ import java.util.List;
 public class JsonUpload extends HTTPJsonRequest {
     private HTTPMultiPartTransfer multiPartTransfer;
 
+    final private Activity activity;
     final private List<Uri> attachments;
     final private List<String> groupMembers;
 
-    public JsonUpload(List<Uri> attachments, List<String> groupMembers) {
+    public JsonUpload(Activity activity, List<Uri> attachments, List<String> groupMembers) {
+        this.activity = activity;
         this.attachments = attachments;
         this.groupMembers = groupMembers;
     }
@@ -96,11 +100,16 @@ public class JsonUpload extends HTTPJsonRequest {
         // upload attachments
         if (attachments != null) {
             for (int i = 0; i < attachments.size(); i++) {
-                final File file = new File(attachments.get(i).getPath());
-                receiver.onNext(new Progress(file.getName()));
+                final Uri uri = attachments.get(i);
+                final String name = uri.getLastPathSegment();
+                ParcelFileDescriptor fd = activity.getContentResolver().openFileDescriptor(uri, "r");
+                final long fileSize = fd.getStatSize();
+                fd.close();
 
-                OutputStream outputStream = multiPartTransfer.addFile(fileIds.get(i), file.getName());
-                InputStream attachmentStream = new FileInputStream(file);
+                receiver.onNext(new Progress(name));
+
+                OutputStream outputStream = multiPartTransfer.addFile(fileIds.get(i), name);
+                InputStream attachmentStream = activity.getContentResolver().openInputStream(uri);
                 StreamHelper.copy(attachmentStream, outputStream, new StreamHelper.IProgressListener() {
                     @Override
                     public int getReportingStep() {
@@ -110,11 +119,12 @@ public class JsonUpload extends HTTPJsonRequest {
                     @Override
                     public void onNewProgress(int totalProgress) {
                         final int KBYTE = 1024;
-                        String update = file.getName();
-                        update += " " + totalProgress / KBYTE + "/" + file.length() / KBYTE + " kBytes";
+                        String update = name;
+                        update += " " + totalProgress / KBYTE + "/" + fileSize / KBYTE + " kBytes";
                         receiver.onNext(new Progress(update));
                     }
                 });
+                attachmentStream.close();
             }
         }
 

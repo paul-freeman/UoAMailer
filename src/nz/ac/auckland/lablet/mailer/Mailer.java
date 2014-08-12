@@ -9,11 +9,12 @@ package nz.ac.auckland.lablet.mailer;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.database.DataSetObserver;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
+import android.view.ViewGroup;
+import android.widget.*;
 
 import java.io.File;
 import java.net.*;
@@ -22,6 +23,7 @@ import java.util.List;
 
 
 public class Mailer extends Activity {
+    private List<Uri> attachments;
     private GroupMembers groupMembers = new GroupMembers();
 
     /**
@@ -31,6 +33,16 @@ public class Mailer extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
+
+        getAttachments();
+
+        final ListView listView = (ListView)findViewById(R.id.listView);
+        if (attachments != null) {
+            List<String> attachmentNames = new ArrayList<>();
+            for (Uri uri : attachments)
+                attachmentNames.add(uri.getLastPathSegment());
+            listView.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, attachmentNames));
+        }
 
         final Button sendButton = (Button)findViewById(R.id.sendButton);
 
@@ -61,18 +73,24 @@ public class Mailer extends Activity {
         CookieHandler.setDefault(new CookieManager(null, CookiePolicy.ACCEPT_ALL));
     }
 
-    private void showSendingDialog(String upi, String password) {
+    private void getAttachments() {
         Intent intent = getIntent();
-        List<Uri> attachments = null;
         Bundle extras = intent.getExtras();
         if (extras != null) {
-            Uri attachment = (Uri)intent.getExtras().get(Intent.EXTRA_STREAM);
-            if (attachment != null) {
-                attachments = new ArrayList<>();
-                attachments.add(attachment);
-            } else
-                attachments = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM);
+            attachments = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM);
+            if (attachments == null) {
+                Object object = extras.get(Intent.EXTRA_STREAM);
+                if (object != null && object instanceof Uri) {
+                    attachments = new ArrayList<>();
+                    attachments.add((Uri)object);
+                }
+            }
         }
+    }
+
+    private void showSendingDialog(String upi, String password) {
+        if (attachments == null)
+            finish();
 
         SendingDialog sendingDialog = new SendingDialog(this, upi, password);
         sendingDialog.setAttachments(attachments);
