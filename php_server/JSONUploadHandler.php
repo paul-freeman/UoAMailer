@@ -51,7 +51,23 @@ class UploadHandler extends JSONHandler {
 			shell_exec('/usr/bin/setfacl -m "user:'.$unixUser.':rwx" '.$groupmembersFile);
 		}
 
+		$link = "http".(!empty($_SERVER['HTTPS'])?"s":"")."://".$_SERVER['SERVER_NAME'].dirname($_SERVER['REQUEST_URI']);
+		$link = $link."/download.php?dir=".$dir;
+		mail($groupMembers, $link);
 		return true;
+	}
+
+	private function mail($groupMembers, $link) {
+		$to = "";
+		foreach ($groupMembers as $member) {
+			$to = $to.$member."@uniauckland.ac.nz, ";
+		}
+		$subject = "Experiment data from the physics lab.";
+		$message = "The experiment data has been uploaded successfully and can be downloaded here:\r\n".$link;
+		$headers = "From: Auckland uni physics lab\r\n" .
+			"X-Mailer: PHP/" . phpversion();
+
+		mail($to, $subject, $message, $headers);
 	}
 } 
 
