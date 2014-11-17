@@ -41,7 +41,7 @@ public class Mailer extends Activity {
             List<String> attachmentNames = new ArrayList<>();
             for (Uri uri : attachments)
                 attachmentNames.add(uri.getLastPathSegment());
-            listView.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, attachmentNames));
+            listView.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, attachmentNames));
         }
 
         final Button sendButton = (Button)findViewById(R.id.sendButton);
