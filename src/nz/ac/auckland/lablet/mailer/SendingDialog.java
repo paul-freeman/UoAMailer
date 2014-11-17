@@ -199,7 +199,8 @@ public class SendingDialog extends AlertDialog {
 
     public void setGroupMembers(GroupMembers groupMembers) {
         this.groupMembers.clear();
-        this.groupMembers.add(upi);
+        if (!this.groupMembers.contains(upi))
+            this.groupMembers.add(upi);
         for (int i = 0; i < groupMembers.size(); i++)
             this.groupMembers.add(groupMembers.get(i));
     }
