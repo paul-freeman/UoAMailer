@@ -95,7 +95,7 @@ public class JsonUpload extends HTTPJsonRequest {
         }
 
         // start request
-        multiPartTransfer = new HTTPMultiPartTransfer(server);
+        multiPartTransfer = new HTTPMultiPartTransfer(server, activity);
 
         // upload attachments
         if (attachments != null) {

@@ -7,9 +7,22 @@
  */
 package nz.ac.auckland.lablet.mailer;
 
+import android.content.Context;
+
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 
 
 public class HTTPMultiPartTransfer {
@@ -22,8 +35,12 @@ public class HTTPMultiPartTransfer {
     private IState currentState = null;
     private InputStream inputStream =null;
 
-    public HTTPMultiPartTransfer(URL url) throws IOException {
-        connection = (HttpURLConnection)url.openConnection();
+    final private Context context;
+
+    public HTTPMultiPartTransfer(URL url, Context context) throws IOException {
+        this.context = context;
+
+        connection = openConnection(url);
 
         connection.setUseCaches(false);
         connection.setDoOutput(true); // indicates POST method
@@ -38,6 +55,69 @@ public class HTTPMultiPartTransfer {
             e.printStackTrace();
             return;
         }
+    }
+
+    private HttpURLConnection getCertifiedConnection(URL url, File cert) throws IOException {
+        // from: https://developer.android.com/training/articles/security-ssl.html
+
+        // Load CAs from an InputStream
+        // (could be from a resource or ByteArrayInputStream or ...)
+        SSLContext context;
+        CertificateFactory cf;
+        try {
+            cf = CertificateFactory.getInstance("X.509");
+
+            InputStream caInput = new BufferedInputStream(new FileInputStream(cert));
+            Certificate ca;
+            try {
+                ca = cf.generateCertificate(caInput);
+                System.out.println("ca=" + ((X509Certificate) ca).getSubjectDN());
+            } finally {
+                caInput.close();
+            }
+
+            // Create a KeyStore containing our trusted CAs
+            String keyStoreType = KeyStore.getDefaultType();
+            KeyStore keyStore = KeyStore.getInstance(keyStoreType);
+            keyStore.load(null, null);
+            keyStore.setCertificateEntry("ca", ca);
+
+            // Create a TrustManager that trusts the CAs in our KeyStore
+            String tmfAlgorithm = TrustManagerFactory.getDefaultAlgorithm();
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance(tmfAlgorithm);
+            tmf.init(keyStore);
+
+            // Create an SSLContext that uses our TrustManager
+            context = SSLContext.getInstance("TLS");
+            context.init(null, tmf.getTrustManagers(), null);
+        } catch (CertificateException e) {
+            e.printStackTrace();
+            throw new IOException(e.getMessage());
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+            throw new IOException(e.getMessage());
+        } catch (KeyStoreException e) {
+            e.printStackTrace();
+            throw new IOException(e.getMessage());
+        } catch (KeyManagementException e) {
+            e.printStackTrace();
+            throw new IOException(e.getMessage());
+        }
+
+        // Tell the URLConnection to use a SocketFactory from our SSLContext
+        HttpsURLConnection urlConnection = (HttpsURLConnection)url.openConnection();
+        urlConnection.setSSLSocketFactory(context.getSocketFactory());
+        return urlConnection;
+    }
+
+    private HttpURLConnection openConnection(URL url) throws IOException {
+        if (url.getProtocol().equals("https")) {
+            File baseDir = context.getExternalFilesDir(null);
+            File file = new File(baseDir, url.getHost() + ".cert");
+            if (file.exists())
+                return getCertifiedConnection(url, file);
+        }
+        return (HttpURLConnection)url.openConnection();
     }
 
     private interface IState {

@@ -147,7 +147,7 @@ public class SendingDialog extends AlertDialog {
     }
 
     private void mail(final String upi, final String password) {
-        JsonLogin jsonLogin = new JsonLogin();
+        JsonLogin jsonLogin = new JsonLogin(getContext());
 
         setProgress("login...");
         currentSubscription = jsonLogin.login(serverAddress, upi, password).subscribeOn(Schedulers.threadPoolForIO())

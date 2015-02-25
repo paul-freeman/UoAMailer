@@ -7,21 +7,27 @@
  */
 package nz.ac.auckland.lablet.mailer;
 
+import android.content.Context;
 import org.json.JSONException;
 import org.json.JSONObject;
 import rx.Observable;
 import rx.Observer;
 import rx.Subscription;
-import rx.subscriptions.Subscriptions;
 
 import java.io.*;
 import java.net.URL;
 
 
 public class JsonLogin extends HTTPJsonRequest {
+    final private Context context;
+
     private String message = "";
     private boolean loggedIn = false;
     private HTTPMultiPartTransfer multiPartTransfer;
+
+    public JsonLogin(Context context) {
+        this.context = context;
+    }
 
     public Observable<Boolean> login(final URL server, final String username, final String password) {
         return Observable.create(new Observable.OnSubscribeFunc<Boolean>() {
@@ -49,7 +55,7 @@ public class JsonLogin extends HTTPJsonRequest {
     }
 
     private boolean sendLoginRequest(URL server, String username, String password) throws IOException, JSONException {
-        multiPartTransfer = new HTTPMultiPartTransfer(server);
+        multiPartTransfer = new HTTPMultiPartTransfer(server, context);
         doRPC(multiPartTransfer, "login", new Argument("upi", username),
                 new Argument("password", password));
         InputStream inputStream = multiPartTransfer.receive();
