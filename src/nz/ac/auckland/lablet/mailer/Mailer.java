@@ -34,6 +34,9 @@ public class Mailer extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
 
+        // this makes it easier to copy config files into the data directory
+        ensureDataDir();
+
         getAttachments();
 
         final ListView listView = (ListView)findViewById(R.id.listView);
@@ -71,6 +74,11 @@ public class Mailer extends Activity {
         });
 
         CookieHandler.setDefault(new CookieManager(null, CookiePolicy.ACCEPT_ALL));
+    }
+
+    private void ensureDataDir() {
+        File baseDir = getExternalFilesDir(null);
+        baseDir.mkdirs();
     }
 
     private void getAttachments() {
