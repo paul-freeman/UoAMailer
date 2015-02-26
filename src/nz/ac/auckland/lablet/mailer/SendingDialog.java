@@ -11,6 +11,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -85,8 +86,12 @@ public class SendingDialog extends AlertDialog {
             @Override
             public void onClick(View view) {
                 dismiss();
-                if (done)
+                if (done) {
+                    Intent resultData = new Intent();
+                    resultData.putExtra("status", "sent");
+                    activity.setResult(Activity.RESULT_OK, resultData);
                     activity.finish();
+                }
             }
         });
 
