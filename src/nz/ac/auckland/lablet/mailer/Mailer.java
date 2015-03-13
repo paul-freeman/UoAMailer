@@ -9,11 +9,9 @@ package nz.ac.auckland.lablet.mailer;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.database.DataSetObserver;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.*;
 
 import java.io.File;
@@ -59,7 +57,7 @@ public class Mailer extends Activity {
         sendButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String upi = upiEditText.getText().toString();
+                String upi = upiEditText.getText().toString().trim();
                 String password = passwordEditText.getText().toString();
 
                 showSendingDialog(upi, password);

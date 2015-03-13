@@ -12,7 +12,7 @@ class LoginHandler extends JSONHandler {
 		if (!isset($params['upi']) || !isset($params['password']))
 			return false;
 
-		return $this->login($params['upi'], $params['password'], $jsonRPCId);
+		return $this->login(trim($params['upi']), $params['password'], $jsonRPCId);
 	}
 
 	protected function loginReturn($jsonId, $error, $message) {
