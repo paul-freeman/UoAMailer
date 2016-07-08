@@ -47,6 +47,7 @@ public class HTTPMultiPartTransfer {
         connection.setDoInput(true);
         connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
         connection.setRequestProperty("Accept-Charset", "utf-8");
+        connection.setChunkedStreamingMode(8 * 1024);
 
         outputStream = connection.getOutputStream();
         try {
