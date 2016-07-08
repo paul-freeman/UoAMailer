@@ -17,7 +17,7 @@ android {
         applicationId "nz.ac.auckland.lablet.mailer"
         minSdkVersion 17
         targetSdkVersion 17
-        versionCode 2
+        versionCode 3
         versionName "1.0"
     }
 
