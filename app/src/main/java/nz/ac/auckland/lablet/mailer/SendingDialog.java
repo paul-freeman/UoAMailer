@@ -14,9 +14,13 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.*;
+import java.util.Locale;
 import rx.Observer;
 import rx.Subscription;
 import rx.android.concurrency.AndroidSchedulers;
@@ -31,6 +35,8 @@ import java.util.List;
 
 
 public class SendingDialog extends AlertDialog {
+    private static final String TAG = "SendingDialog";
+    private static final int BUFFER_SIZE = 1024;
     final private Activity activity;
     private TextView statusView;
     private Subscription currentSubscription = null;
@@ -44,6 +50,7 @@ public class SendingDialog extends AlertDialog {
     private List<Uri> attachments;
 
     private boolean done = false;
+    private final File externalCacheDir;
 
     public SendingDialog(Activity activity, String upi, String password) {
         super(activity);
@@ -53,6 +60,8 @@ public class SendingDialog extends AlertDialog {
         this.activity = activity;
         this.upi = upi;
         this.password = password;
+        // save any files into this directory
+        externalCacheDir = activity.getExternalCacheDir();
     }
 
     @Override
@@ -131,6 +140,20 @@ public class SendingDialog extends AlertDialog {
 
         okButton.setEnabled(true);
         cancelButton.setEnabled(false);
+
+        // remove cache files
+        final File[] files = externalCacheDir.listFiles();
+        Log.i(TAG, String.format(Locale.UK, "Deleting %d files from cache directory", files.length));
+        int filesRemaining = 0;
+        for (File file : files) {
+            if (!file.delete()) {
+                filesRemaining++;
+            }
+        }
+        if (filesRemaining > 0) {
+            Log.e(TAG, String
+                .format(Locale.UK, "Could not delete %d files in cache directory", filesRemaining));
+        }
     }
 
     private void setProgress(String message) {
@@ -170,12 +193,12 @@ public class SendingDialog extends AlertDialog {
 
                     @Override
                     public void onNext(Boolean results) {
-                        System.out.print(results);
-
                         if (results) {
+                            Log.d(TAG, "login ok");
                             setProgress("login ok");
                             uploadData();
                         } else
+                            Log.d(TAG, "login failed");
                             setError("login failed");
                     }
                 });
@@ -197,6 +220,7 @@ public class SendingDialog extends AlertDialog {
 
                 @Override
                 public void onNext(JsonUpload.Progress progress) {
+                    Log.d(TAG, "Upload: " + progress.info);
                     setProgress("Upload: " + progress.info);
                 }
             });
@@ -210,8 +234,96 @@ public class SendingDialog extends AlertDialog {
             this.groupMembers.add(groupMembers.get(i));
     }
 
-    public void setAttachments(List<Uri> attachments) {
-        this.attachments = attachments;
+    void setAttachments(List<Uri> uriList) {
+        attachments = new ArrayList<>();
+
+        for (Uri uri : uriList) {
+
+            if (uri.getLastPathSegment().matches("[._A-Za-z0-9]")) {
+                // the mailer chokes on filenames with special characters (and maybe spaces)
+                // so let's just make sure all files contain only alphanumeric, '_', and '.'
+                attachments.add(uri);
+            } else {
+                // files with invalid names can probably be copied to files with new names
+                Uri cacheUri = makeCacheCopy(uri);
+                if (cacheUri == null) {
+                    continue;
+                }
+                attachments.add(cacheUri);
+            }
+        }
+    }
+
+  /**
+   * Makes a copy of the file referenced by the given {@link Uri} in the external cache directory.
+   *
+   * @param uri original {@link Uri}
+   * @return {@link Uri} to the new file in the cache directory
+   */
+    @Nullable
+    private Uri makeCacheCopy(Uri uri) {
+        // get an input stream for the new file
+        FileInputStream inData;
+        try {
+            inData = new FileInputStream(uri.getPath());
+        } catch (FileNotFoundException e) {
+            Log.e(TAG, "Could not open input stream... skipping " + uri.getLastPathSegment());
+            return null;
+        }
+
+        // get an output stream for the new file
+        final File outFile = getCleanCacheFile(uri);
+        final FileOutputStream outData;
+        try {
+            outData = new FileOutputStream(outFile);
+        } catch (FileNotFoundException e) {
+            Log.e(TAG, "Could not open output stream... skipping " + uri.getLastPathSegment());
+            return null;
+        }
+
+        // perform the copy
+        try {
+            byte[] buf = new byte[BUFFER_SIZE];
+            int len;
+            while ((len = inData.read(buf)) > 0) {
+                outData.write(buf, 0, len);
+            }
+            Log.i(TAG, "File copied to cache directory with valid naming");
+        } catch (IOException e) {
+            Log.e(TAG, "Could not copy all data... skipping " + uri.getLastPathSegment());
+            return null;
+        } finally {
+            try {
+                inData.close();
+            } catch (IOException e) {
+                Log.e(TAG, "Could not close input file");
+            }
+            try {
+                outData.close();
+            } catch (IOException e) {
+                Log.e(TAG, "Could not close output file");
+            }
+        }
+        return Uri.fromFile(outFile);
+    }
+
+  /**
+   * Creates a *clean* {@link File} object.
+   *
+   * Basically, the server we are sending files to seems to not handle special
+   * characters very well. So this method will create a rather normal file name,
+   * which only allows '.' and '_' special characters.
+   *
+   * @param uri the Android {@link Uri} to clean
+   * @return a clean {@link File} object in the device external cache directory
+   */
+    @NonNull
+    private File getCleanCacheFile(Uri uri) {
+        final String newName = uri.getLastPathSegment()
+            // fix all the invalid characters in the new file name
+            .replace(" ", "_")
+            .replaceAll("[^._A-Za-z0-9]", "");
+        return new File(externalCacheDir, newName);
     }
 
     public List<Uri> getAttachments() {

@@ -3,7 +3,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:1.0.0'
+        classpath 'com.android.tools.build:gradle:2.2.3'
     }
 }
 
@@ -64,7 +64,7 @@ android.applicationVariants.all { variant ->
         classpath = files(variant.javaCompile.classpath.files, androidJar)
         options {
             links "http://docs.oracle.com/javase/7/docs/api/"
-            linksOffline "http://d.android.com/reference","${android.sdkDirectory}/docs/reference"
+            linksOffline "http://d.android.com/reference", "${android.sdkDirectory}/docs/reference"
             doclet 'org.jboss.apiviz.APIviz'
             docletpath file(configurations.doclet.asPath)
         }
@@ -85,4 +85,7 @@ dependencies {
     compile "com.android.support:support-annotations:20.0.0"
     compile "com.android.support:support-v4:21.0.2"
     compile fileTree(dir: 'libs', include: ['*.jar'])
+}
+dependencies {
+    compile 'com.android.support:appcompat-v7:18.+'
 }
