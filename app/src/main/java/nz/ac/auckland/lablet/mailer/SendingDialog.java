@@ -239,12 +239,14 @@ public class SendingDialog extends AlertDialog {
 
         for (Uri uri : uriList) {
 
-            if (uri.getLastPathSegment().matches("[._A-Za-z0-9]")) {
+            if (uri.getLastPathSegment().matches("[\\w\\-.]+")) {
                 // the mailer chokes on filenames with special characters (and maybe spaces)
-                // so let's just make sure all files contain only alphanumeric, '_', and '.'
+                // so let's just make sure all files contain only words, '-', and '.'
+                Log.d(TAG, "Filename okay: " + uri.getLastPathSegment());
                 attachments.add(uri);
             } else {
                 // files with invalid names can probably be copied to files with new names
+                Log.d(TAG, "Filename not okay: " + uri.getLastPathSegment());
                 Uri cacheUri = makeCacheCopy(uri);
                 if (cacheUri == null) {
                     continue;
@@ -322,7 +324,7 @@ public class SendingDialog extends AlertDialog {
         final String newName = uri.getLastPathSegment()
             // fix all the invalid characters in the new file name
             .replace(" ", "_")
-            .replaceAll("[^._A-Za-z0-9]", "");
+            .replaceAll("[^\\w\\-.]", "");
         return new File(externalCacheDir, newName);
     }
 
