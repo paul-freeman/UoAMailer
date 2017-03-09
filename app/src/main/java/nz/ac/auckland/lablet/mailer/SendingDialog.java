@@ -160,14 +160,23 @@ public class SendingDialog extends AlertDialog {
         statusView.setText(message);
     }
 
+    /**
+     * Reads the servers address from a config file.
+     * <p>
+     *     Depending on the release type, the config file will be either included in
+     *     the apk package or it will need to be manually installed by the user. Therefore,
+     *     this method calls {@link FileHelper#getInputStream(Context, String)}, which
+     *     is customised for each release to look in the appropriate place.
+     * </p>
+     * @return the server address found in the config file, or the empty string if there is an error
+     */
     private String readServerAddress() {
-        File baseDir = getContext().getExternalFilesDir(null);
-        File file = new File(baseDir, "config");
         try {
-            BufferedReader reader = new BufferedReader(new FileReader(file));
+            String fileName = activity.getString(R.string.config_file_name);
+            InputStream inputStream = FileHelper.getInputStream(getContext(), fileName);
+            InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+            BufferedReader reader = new BufferedReader(inputStreamReader);
             return reader.readLine();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }

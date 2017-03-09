@@ -1,0 +1,4 @@
+# these files are private and should not be saved in
+# a public git repository
+config
+www.fos.auckland.ac.nz.cert

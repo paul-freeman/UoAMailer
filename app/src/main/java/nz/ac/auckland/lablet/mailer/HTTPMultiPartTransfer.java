@@ -58,7 +58,7 @@ public class HTTPMultiPartTransfer {
         }
     }
 
-    private HttpURLConnection getCertifiedConnection(URL url, File cert) throws IOException {
+    private HttpURLConnection getCertifiedConnection(URL url, InputStream caInput) throws IOException {
         // from: https://developer.android.com/training/articles/security-ssl.html
 
         // Load CAs from an InputStream
@@ -68,7 +68,6 @@ public class HTTPMultiPartTransfer {
         try {
             cf = CertificateFactory.getInstance("X.509");
 
-            InputStream caInput = new BufferedInputStream(new FileInputStream(cert));
             Certificate ca;
             try {
                 ca = cf.generateCertificate(caInput);
@@ -113,10 +112,8 @@ public class HTTPMultiPartTransfer {
 
     private HttpURLConnection openConnection(URL url) throws IOException {
         if (url.getProtocol().equals("https")) {
-            File baseDir = context.getExternalFilesDir(null);
-            File file = new File(baseDir, url.getHost() + ".cert");
-            if (file.exists())
-                return getCertifiedConnection(url, file);
+            InputStream inputStream = FileHelper.getInputStream(context, url.getHost() + ".cert");
+            return getCertifiedConnection(url, new BufferedInputStream(inputStream));
         }
         return (HttpURLConnection)url.openConnection();
     }
