@@ -3,20 +3,20 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.2.3'
+        classpath 'com.android.tools.build:gradle:2.3.0'
     }
 }
 
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 18
-    buildToolsVersion '19.1.0'
+    compileSdkVersion 25
+    buildToolsVersion '25.0.2'
 
     defaultConfig {
         applicationId "nz.ac.auckland.lablet.mailer"
         minSdkVersion 17
-        targetSdkVersion 17
+        targetSdkVersion 18
         versionCode 3
         versionName "1.0"
     }
@@ -39,11 +39,20 @@ android {
     }
 
     buildTypes {
+        debug {
+        }
         release {
             signingConfig signingConfigs.release
             minifyEnabled false
             zipAlignEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    productFlavors {
+        uoa_private {
+        }
+        all_public {
         }
     }
 }
@@ -79,13 +88,13 @@ repositories {
 }
 
 dependencies {
-    compile "com.google.code.gson:gson:2.2.4"
+    compile "com.google.code.gson:gson:2.7"
     compile "com.netflix.rxjava:rxjava-android:0.13.2"
     compile "com.netflix.rxjava:rxjava-core:0.14.7"
-    compile "com.android.support:support-annotations:20.0.0"
-    compile "com.android.support:support-v4:21.0.2"
+    compile "com.android.support:support-annotations:25.2.0"
+    compile "com.android.support:support-v4:25.2.0"
     compile fileTree(dir: 'libs', include: ['*.jar'])
 }
 dependencies {
-    compile 'com.android.support:appcompat-v7:18.+'
+    compile 'com.android.support:appcompat-v7:25.2.0'
 }
